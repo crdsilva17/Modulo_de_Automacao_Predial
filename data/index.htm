@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="description" content="IoT relay dual">
+
+        <title>Rel&ecirc; Duplo</title>
+
+        <style>
+    h1{
+    text-align: center;
+    color:white;
+    cursor: default;
+    }
+    h5{
+    text-align: center;
+    color: rgb(1,199,236);
+    cursor: default;
+    }
+
+    input.btn{
+    margin-left: 25%;
+    margin-top: 10%;
+    margin-bottom: 10%;
+    width: 50%;
+    height: 200px;
+    background-color:rgb(1,199,236);
+    border-radius: 150px;
+    border-color: white;
+    font-size: 3.5em;
+    color: white;
+    cursor: pointer;
+    }
+    label{
+    font-size: 18px;
+    }
+    fieldset{
+    width: 280px;
+    color: rgb(1,199,236);
+    border-color: rgb(244, 247, 244);
+    margin-left: 2px;
+    }
+    legend{
+    cursor: default;
+    }
+    body{
+    background-color:white;
+    margin: 0;
+    }
+    .panel{
+    overflow: hidden;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border-style: solid;
+    background-color: rgba(1,199,236);
+    border-color: whitesmoke;
+    margin-bottom: 30px;
+    font-size: 2em;
+    }
+    .footer{
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    }
+    </style>
+    </head>
+    <body onload="autoRefresh(1500)"> 
+     <div class="panel">  
+    <h1>Rel&ecirc; Duplo</h1>
+    </div>
+    <div >
+    <div><form id="f1" action='/action' method='POST'>
+    <input type='hidden' id = 'b1' name="out1" value="Off">
+    <input type='button'class = 'btn' id = 'btn1' value="" onclick="sendForm('f1')">
+    </form>
+    </div>
+    <div><form id="f2" action='/action' method='POST'>
+    <input type='hidden' id = 'b2' name="out2" value="Off">
+    <input type='button' class='btn' id ="btn2" value="" onclick="sendForm('f2')">
+    </form>
+    </div>
+    <div><form action='/reset' method='POST'>
+    <input type='hidden' name="rstW" value="true">
+    <input type='submit' class='btn' value="Configuração">
+    </form>
+    </div>
+    </div>
+    <div class="footer">
+        <h5>Desde 2012 Automa&ccedil;&atilde;o Universal Modular.</h5>
+    </div>
+    <script>
+    var myForm, input1, input2;
+    function autoRefresh(interval) {my = setInterval(atualizar,interval);} 
+    function atualizar() { 
+    var xh = new XMLHttpRequest();
+    xh.onreadystatechange = function(){
+    if(xh.readyState == 4){
+    if(xh.status == 200){
+    var res = JSON.parse(xh.responseText);
+    input1 = res.p1;
+    input2 = res.p2;
+    document.getElementById("btn1").value = input1;
+    document.getElementById("btn2").value = input2;
+    if(input1 == "On"){
+    document.getElementById("b1").value = "Off";
+    }else{document.getElementById("b1").value = "On";}
+    if(input2 == "On"){
+    document.getElementById("b2").value = "Off";
+    }else{document.getElementById("b2").value = "On";}
+    xh.abort();
+    }
+    }
+    };
+    xh.open("POST","/btn",true);
+    xh.send(null);
+    };
+
+    function sendForm(f){
+        myForm = document.getElementById(f);
+        formData = new FormData(myForm);
+        var xh = new XMLHttpRequest();
+        xh.onreadystatechange = function(){
+            if(xh.readyState == 4){
+                if(xh.status == 200){
+                    var res = JSON.parse(xh.responseText);
+                    input1 = res.p1;
+                    input2 = res.p2;
+                    document.getElementById("btn1").value = input1;
+                    document.getElementById("btn2").value = input2;
+                    if(input1 == "On"){
+                    document.getElementById("b1").value = "Off";
+                    }else{document.getElementById("b1").value = "On";}
+                    if(input2 == "On"){
+                    document.getElementById("b2").value = "Off";
+                    }else{document.getElementById("b2").value = "On";}
+
+                    xh.abort();
+                }
+            }
+        };
+        xh.open("POST","/action",true);
+        xh.send(formData);
+    }
+
+    </script>
+    </body>
+    </html>
