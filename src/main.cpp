@@ -31,6 +31,7 @@ char mqtt_server[60] = "example.com";
 char mqtt_port[6] = "1883";
 char mqtt_user[30] = "root";
 char mqtt_pass[20] = "senha123";
+char mqtt_prefix[30] = "AUM/";
 char mqtt_topic[60] = "topic/";
 char mqtt_dev1[20] = "device 1";
 char mqtt_dev2[20] = "device 2";
@@ -88,8 +89,8 @@ void setup() {
 
   Serial.begin(9600);
 
-  if(SPIFFS.begin()){
-    if(SPIFFS.exists("/config.json")){
+  if(SPIFFS.begin()){ //iniciando gerenciador de arquivos
+    if(SPIFFS.exists("/config.json")){ // verificando a existencia do arquivo de configuração
       Serial.println("File Exist");
       File configFile = SPIFFS.open("/config.json","r");
       Serial.println("lendo arquivo");
@@ -128,6 +129,7 @@ void setup() {
     }
   }//end SPIFFS begin
 
+  //Configuração dos Pinos de Entrada e Saída
   pinMode(input1,INPUT);
   pinMode(input2,INPUT);
   pinMode(output1,OUTPUT);
@@ -138,6 +140,7 @@ void setup() {
   digitalWrite(output1,LOW);
   digitalWrite(output2,LOW);
 
+// Criando parametros para adicionar a tela principal
 WiFiManagerParameter custom_hostname("hostname", "host",hostname,20);
 WiFiManagerParameter custom_dev1("dev1","device 1",mqtt_dev1,20);
 WiFiManagerParameter custom_dev2("dev2","device 2",mqtt_dev2,20);
@@ -163,6 +166,8 @@ WiFiManagerParameter custom_out2("out2", "Output 2", (char*)input.c_str(), 2);
   _ip.fromString(static_ip);
   _gw.fromString(static_gw);
   _sn.fromString(static_sn);
+
+  //Recebendo valores do usuario
 
   wifiManager.setSTAStaticIPConfig(_ip, _gw, _sn);
 
@@ -252,28 +257,36 @@ if(MDNS.begin(String(hostname))){
 //PubSubClient client(mqtt_server,(int)mqtt_port,espClient);
 //PubSubClientTools mqtt(client);
 client.setServer(mqtt_server,atoi(mqtt_port));
-Serial.print("USer: "); Serial.println(mqtt_user);
-Serial.print("pass: "); Serial.println(mqtt_pass);
-Serial.print("Server: "); Serial.println(mqtt_server);
-Serial.print("port: "); Serial.println(atoi(mqtt_port));
-Serial.print("topic: "); Serial.println(mqtt_topic);
-Serial.print("dev1: "); Serial.println(mqtt_dev1);
-Serial.print("dev2: "); Serial.println(mqtt_dev2);
+
 
 if(client.connect(hostname) or client.connect(hostname,mqtt_user,mqtt_pass))
 {
   Serial.println("Connected to MQTT");
   String topic = mqtt_topic;
+  String config = mqtt_prefix;
+  String msg('{');
   topic += mqtt_dev1;
+  config += topic;
+  config += "/config";
   topic += "/set";
-  Serial.print("topic 1: "); Serial.println(topic);
   mqtt.subscribe(topic,topic1_sub);
+  msg += "\"name\" : " + String(hostname) + "_1" + ",\"command_topic\" : " + String(topic);
+  topic.replace("set","state");
+  msg += ",\"state_topic\" : " + String(topic);
+  msg += "\"}\"";
+  mqtt.publish(config,msg);
   delay(200);
   topic = mqtt_topic;
   topic += mqtt_dev2;
   topic += "/set";
-  Serial.print("topic 2: "); Serial.println(topic);
   mqtt.subscribe(topic,topic2_sub);
+  msg = "{";
+  msg += "\"name\" : " + String(hostname) + "_2" + ",\"command_topic\" : " + String(topic);
+  topic.replace("set","state");
+  msg += ",\"state_topic\" : " + String(topic);
+  msg += "\"}\"";
+  config.replace(mqtt_dev1, mqtt_dev2);
+  mqtt.publish(config,msg);
 }
 
 server.on("/",handleRoot);
